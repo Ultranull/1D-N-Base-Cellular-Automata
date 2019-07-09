@@ -1,2 +1,2 @@
-# 1D-N-dimensional-Cellular-automata
+# 1D-N-base-Cellular-automata
 really only goes from base 2 to 64
