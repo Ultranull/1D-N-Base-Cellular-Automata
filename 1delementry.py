@@ -1,4 +1,3 @@
-
 import random
 import argparse
 from PIL import Image
@@ -48,7 +47,7 @@ def getstate(last, row, base):
     c = neighbors-int(neighbors/2)-1
     for loc in range(-c,c+1):
         if loc + row >= len(last) or loc + row < 0:
-            parent.append(0)
+            parent.append(args.boundry_value)
         else: parent.append(last[row + loc])
     bn = baseNtodec(parent, base)
     out = rule_size - 1 - bn
@@ -63,11 +62,13 @@ def nextgen(last, base):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('rule',type = int)
-parser.add_argument('base',type = int)
+parser.add_argument('rule',nargs='?', default=-1,type = int)
+parser.add_argument('base', nargs='?', default=2, type = int)
 parser.add_argument('-c','--colors', nargs='+', type = int, default= [0,0,0xb0,0xf0,0x89,0x13])
 parser.add_argument('-n','--neighbors', type = int, default= 3)
+parser.add_argument('-d','--dimensions', nargs='+', type = int, default= (700, 350))
 parser.add_argument('-r','--random_start',action='store_true')
+parser.add_argument('-b','--boundry_value', type = int, default= 0)
 args = parser.parse_args()
 
 customPalette = [(args.colors[i],args.colors[i+1],args.colors[i+2]) for i in range(0,len(args.colors),3)]
@@ -91,7 +92,7 @@ if (len(rule) != rule_size):
 while len(rule) > rule_size:
     rule.pop(0)
 
-dem = (700, 350)
+dem = tuple(args.dimensions)
 gens = []
 ans = []
 
@@ -111,7 +112,7 @@ for row in range(0, dem[1]):
     gens = nextgen(gens, base)
 img.save('test.png')
 
-print(rule)
+print(baseNtodec(rule,base))
 
 
 
