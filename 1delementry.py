@@ -60,6 +60,16 @@ def nextgen(last, base):
         ans += [getstate(last, i, base)]
     return ans
 
+def rotate(l, n):
+    return l[n:] + l[:n]
+
+class CustomAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not 'ordered_args' in namespace:
+            setattr(namespace, 'ordered_args', [])
+        previous = namespace.ordered_args
+        previous.append((self.dest, values))
+        setattr(namespace, 'ordered_args', previous)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('rule',nargs='?', default=-1,type = int)
@@ -69,6 +79,7 @@ parser.add_argument('-n','--neighbors', type = int, default= 3)
 parser.add_argument('-d','--dimensions', nargs='+', type = int, default= (700, 350))
 parser.add_argument('-r','--random_start',action='store_true')
 parser.add_argument('-b','--boundry_value', type = int, default= 0)
+parser.add_argument('-m','--rule_mutations' , type = str, default= '')
 args = parser.parse_args()
 
 customPalette = [(args.colors[i],args.colors[i+1],args.colors[i+2]) for i in range(0,len(args.colors),3)]
@@ -91,6 +102,19 @@ if (len(rule) != rule_size):
 
 while len(rule) > rule_size:
     rule.pop(0)
+
+if len(args.rule_mutations) > 0:
+    for m in list(args.rule_mutations):
+        if m == "i":
+            for i in range(0,len(rule)):
+                rule[i] = (base-1) - rule[i]
+        elif m == "b":
+            rule.reverse()
+        elif m == "r":
+            rule = rotate(rule,-1)
+        elif m == "l":
+            rule = rotate(rule,1)
+
 
 dem = tuple(args.dimensions)
 gens = []
