@@ -71,15 +71,18 @@ class CustomAction(argparse.Action):
         previous.append((self.dest, values))
         setattr(namespace, 'ordered_args', previous)
 
+def auto_int(x):
+    return int(x,0)
+
 parser = argparse.ArgumentParser()
-parser.add_argument('rule',nargs='?', default=-1,type = int)
-parser.add_argument('base', nargs='?', default=2, type = int)
-parser.add_argument('-c','--colors', nargs='+', type = int, default= [0,0,0xb0,0xf0,0x89,0x13])
-parser.add_argument('-n','--neighbors', type = int, default= 3)
-parser.add_argument('-d','--dimensions', nargs='+', type = int, default= (700, 350))
-parser.add_argument('-r','--random_start',action='store_true')
-parser.add_argument('-b','--boundry_value', type = int, default= 0)
+parser.add_argument('rule',nargs='?', default=-1,type = auto_int)
+parser.add_argument('base', nargs='?', default=2, type = auto_int)
+parser.add_argument('-c','--colors', nargs='+', type = auto_int, default= [0x00,0x41,0x6a,0x79,0x9f,0x0c,0xff,0xe0,0x00])
+parser.add_argument('-n','--neighbors', type = auto_int, default= 3)
+parser.add_argument('-d','--dimensions', nargs='+', type = auto_int, default= (700, 350))
+parser.add_argument('-b','--boundry_value', type = auto_int, default= 0)
 parser.add_argument('-m','--rule_mutations' , type = str, default= '')
+parser.add_argument('-s','--starting_state' , type = str, default= '')
 args = parser.parse_args()
 
 customPalette = [(args.colors[i],args.colors[i+1],args.colors[i+2]) for i in range(0,len(args.colors),3)]
@@ -120,11 +123,29 @@ dem = tuple(args.dimensions)
 gens = []
 ans = []
 
-ans = [0 for _ in range(int(dem[0]/2))]
-gens = ans + [base - 1] + ans
+if len(args.starting_state) != 0:
+    c = args.starting_state[0]
+    if c == 'r':
+        gens = [random.randint(0, base-1) for i in range(0,dem[0])]
+    elif c == 'c':
+        centerArgs = args.starting_state.split('\\')
+        ans = [(int(centerArgs[1])%base) for _ in range(int(dem[0]/2))]
+        gens = ans + [(int(centerArgs[2])%base)] + ans
+    elif c == 'g':
+        gens = [i%base for i in range(0,dem[0])]
+    elif c == 'p':
+        start = args.starting_state.find('\\')
+        end = args.starting_state.rfind('\\')
+        pattern = args.starting_state[start+1:end]
+        for i in range(0,dem[0]):
+            gens += [int(pattern[i%len(pattern)])]
+else:
+    ans = [0 for _ in range(int(dem[0]/2))]
+    gens = ans + [base - 1] + ans
 
-if args.random_start:
-    gens = [random.randint(0, base-1) for i in range(0,dem[0])]
+
+
+
 
 img = Image.new('RGB',dem)
 pixels = img.load()
