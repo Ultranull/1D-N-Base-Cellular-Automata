@@ -1,8 +1,8 @@
 import random
 import argparse
+from argparse import RawTextHelpFormatter
 from PIL import Image
 
-numerals = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 def inter(a:float,b:float,t:float):
     return int(t*b+(1-t)*a)
 
@@ -23,8 +23,6 @@ def colorHist2(lst,t):
         if t <= (i+1)/(size-1):
             return colorInter(lst[i],lst[i+1],(t-i/float(size-1))*(size-1))
 
-
-
 def baseN(n, b):
     if n == 0:
         return [0]
@@ -34,13 +32,11 @@ def baseN(n, b):
         n //= b
     return digits[::-1]
 
-
 def baseNtodec(n, b):
     number = 0
     for i, digit in enumerate(n):
         number += digit * (b ** (len(n) - i - 1))
     return number
-
 
 def getstate(last, row, base):
     parent = []
@@ -53,7 +49,6 @@ def getstate(last, row, base):
     out = rule_size - 1 - bn
     return rule[out] 
 
-
 def nextgen(last, base):
     ans = []
     for i in range(len(last)):
@@ -63,26 +58,25 @@ def nextgen(last, base):
 def rotate(l, n):
     return l[n:] + l[:n]
 
-class CustomAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        if not 'ordered_args' in namespace:
-            setattr(namespace, 'ordered_args', [])
-        previous = namespace.ordered_args
-        previous.append((self.dest, values))
-        setattr(namespace, 'ordered_args', previous)
-
 def auto_int(x):
     return int(x,0)
 
-parser = argparse.ArgumentParser()
-parser.add_argument('rule',nargs='?', default=-1,type = auto_int)
-parser.add_argument('base', nargs='?', default=2, type = auto_int)
-parser.add_argument('-c','--colors', nargs='+', type = auto_int, default= [0x00,0x41,0x6a,0x79,0x9f,0x0c,0xff,0xe0,0x00])
-parser.add_argument('-n','--neighbors', type = auto_int, default= 3)
-parser.add_argument('-d','--dimensions', nargs='+', type = auto_int, default= (700, 350))
-parser.add_argument('-b','--boundry_value', type = auto_int, default= 0)
-parser.add_argument('-m','--rule_mutations' , type = str, default= '')
-parser.add_argument('-s','--starting_state' , type = str, default= '')
+parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+parser.add_argument('rule',nargs='?', default=-1,type = auto_int, help='Rule given in decimal. The default is -1 which is a random rule.')
+parser.add_argument('base', nargs='?', default=2, type = auto_int, help='Number of states. This value determines rule size using the equation: (base)^(number of neighbors). Becareful with using high bases as generation can be slow.')
+parser.add_argument('-c','--colors', nargs='+', type = auto_int, default= [0x00,0x41,0x6a,0x79,0x9f,0x0c,0xff,0xe0,0x00], help='List RGB components of each color to create a gradient. ex: -c r1 g1 b1 r2 g2 b2 r3 g3 b3')
+parser.add_argument('-n','--neighbors', type = auto_int, default= 3, help='Number of parents for a cell. How far from the direct parent is determined by neighbors-round(neighbors/2)-1. Note that even numbers will not produce a lopsided neighborhood.')
+parser.add_argument('-d','--dimensions', nargs='+', type = auto_int, default= (700, 350), help='Width and height of the output image.')
+parser.add_argument('-b','--boundry_value', type = auto_int, default= 0,help='Assumed value of invalid cells outside boundry.')
+parser.add_argument('-m','--rule_mutations' , type = str, default= '', help='Mutations applied on rule:\n i : invert, (base-1)-(rule digit)\n b : backwords, reverses the rule\n r : rotate right\n l : rotate left\n (multiple can be used)')
+parser.add_argument('-s','--starting_state' , type = str, choices=['r','c','g','p'],default= '', help=
+    'Set the initial state of the automata:\n'
+    ' r : random\n'
+    ' c : centered, set the centered pattern ex: -sc\\111\\0\\ will place "111" in the center sounded by all "0"\n'
+    ' g : gradient, loop from 0 to (base-1) repeatedly\n'
+    ' p : pattern, give a specific pattern repeated across the initial state ex: -sp\\001100010010\\')
+parser.add_argument('-f','--file_name' , type = str, default= 'output.png', help='Name of the file to output.')
+parser.add_argument('-r','--return_rule' , type = str, choices=['l','d'], default= '',help='Return the rule after generation.\n l : list of decimal numbers. This directly represent the number in the respective base\n d : rule in decimal')
 args = parser.parse_args()
 
 customPalette = [(args.colors[i],args.colors[i+1],args.colors[i+2]) for i in range(0,len(args.colors),3)]
@@ -118,7 +112,6 @@ if len(args.rule_mutations) > 0:
         elif m == "l":
             rule = rotate(rule,1)
 
-
 dem = tuple(args.dimensions)
 gens = []
 ans = []
@@ -143,10 +136,6 @@ else:
     ans = [0 for _ in range(int(dem[0]/2))]
     gens = ans + [base - 1] + ans
 
-
-
-
-
 img = Image.new('RGB',dem)
 pixels = img.load()
 for row in range(0, dem[1]):
@@ -155,12 +144,10 @@ for row in range(0, dem[1]):
         color = colorHist2(customPalette,cellIndex)
         pixels[col,row]= color
     gens = nextgen(gens, base)
-img.save('test.png')
+img.save(args.file_name)
 
-print(baseNtodec(rule,base))
-
-
-
-
-
-# base 5 24203034231100402041314421044124123423211313212020442000121103242401143234213221044323220312234012114302422423421144442030244231440143121300313044133341102434001334343440042222210
+if len(args.return_rule) > 0:
+    if args.return_rule == 'l':
+        print(rule)
+    elif args.return_rule == 'd':
+        print(baseNtodec(rule,base))
