@@ -33,21 +33,35 @@ def getRange(base,numDigits):
         out += (('{:0>'+'{}'.format(numDigits)+'s} ').format(int2base(i,base)))
     return out
 
-r = '{:0>8s}'.format(int2base(90,2))
+r = '{:0>8s}'.format(int2base(102,2))
 inRule = {'base':2,'neighbors':3,'rule':r,'range':''}
-outRule = {'base':3,'neighbors':5,'rule':'','range':''}
+outRule = {'base':5,'neighbors':3,'rule':'','range':''}
 
 inRule['range']=getRange(inRule['base'],inRule['neighbors'])
 outRule['range']=getRange(outRule['base'],outRule['neighbors'])
 
-pattern = r'{}\d{}\d{}'
+pattern = r'{}{}{}'
 outRule['rule'] = outRule['range']
 
 for i,parent in enumerate(inRule['range'].split()):
-    intParent = tuple(map(int,list(parent)))
+    intParent = tuple(map(int,list(parent.replace('1','2').replace('0','1'))))
     regex = re.compile(pattern.format(*intParent), re.S)
-    outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),inRule['rule'][i],1), outRule['rule'])
+    if inRule['rule'][i] == '1':
+        outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),'2',1), outRule['rule'])
+    if inRule['rule'][i] == '0':
+        outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),'1',1), outRule['rule'])
 
+r = '{:0>8s}'.format(int2base(60,2))
+inRule['rule'] = r
+pattern = r'{}{}{}'
+
+for i,parent in enumerate(inRule['range'].split()):
+    intParent = tuple(map(int,list(parent.replace('0','3').replace('1','4'))))
+    regex = re.compile(pattern.format(*intParent), re.S)
+    if inRule['rule'][i] == '1':
+        outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),'4',1), outRule['rule'])
+    if inRule['rule'][i] == '0':
+        outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),'3',1), outRule['rule'])
 
 regex = re.compile(r'\d{'+str(outRule['neighbors'])+r'}', re.S)
 outRule['rule'] = regex.sub(lambda m: m.group().replace(m.group(),'0',1), outRule['rule'])
